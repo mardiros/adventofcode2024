@@ -1,7 +1,7 @@
 import pathlib
 from collections import defaultdict
 
-codes = pathlib.Path("d1.txt").read_text()
+codes = pathlib.Path("d01.py".txt").read_text()
 
 list1, list2 = [], defaultdict(int)
 for line in codes.strip().splitlines():

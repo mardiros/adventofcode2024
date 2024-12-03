@@ -1,6 +1,6 @@
 import pathlib
 
-codes = pathlib.Path("d2.txt").read_text()
+codes = pathlib.Path("d02.txt").read_text()
 
 
 def clone_list(line: list[int]):
@@ -9,7 +9,6 @@ def clone_list(line: list[int]):
 
 
 def safe_count(line, recursive=True):
-    lastline = line.copy()
     lcp = line.copy()
     val = line.pop(0)
     positive = val > line[0]
@@ -26,7 +25,6 @@ def safe_count(line, recursive=True):
                         return 1
             return 0
         val = i
-    listlast = " ".join(map(str, lastline))
     return 1
 
 

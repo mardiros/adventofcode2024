@@ -1,6 +1,6 @@
 import pathlib
 
-codes = pathlib.Path("d2.txt").read_text()
+codes = pathlib.Path("d02.txt").read_text()
 
 
 def safe_count(line):
