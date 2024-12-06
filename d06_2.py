@@ -1,23 +1,21 @@
-# don't give the right anwser for the puzzle,
-# give proper result on the sample. sad.
 from enum import Enum
 import pathlib
 from dataclasses import field, dataclass
 
 codes = pathlib.Path("d06.txt").read_text()
 
-codes = """\
-....#.....
-.........#
-..........
-..#.......
-.......#..
-..........
-.#..^.....
-........#.
-#.........
-......#...
-"""
+# codes = """\
+# ....#.....
+# .........#
+# ..........
+# ..#.......
+# .......#..
+# ..........
+# .#..^.....
+# ........#.
+# #.........
+# ......#...
+# """
 
 
 class PointType(Enum):
@@ -36,9 +34,19 @@ class Direction(Enum):
 class Point:
     typ: PointType
     visited: bool = field(default=False)
+    visited_pos: dict[Direction, bool] = field(
+        default_factory=lambda: {
+            Direction.UP: False,
+            Direction.DOWN: False,
+            Direction.RIGHT: False,
+            Direction.LEFT: False,
+        }
+    )
+    conflict: bool = field(default=False)
 
-    def visit(self):
+    def visit(self, direction: Direction):
         self.visited = True
+        self.visited_pos[direction] = True
 
     def obstr(self) -> bool:
         return self.typ == PointType.obstruction
@@ -55,10 +63,10 @@ class World:
         self.position = position
         self.row_width = row_width
         self.direction = direction
-        self.map[position].visit()
+        self.map[position].visit(direction)
 
-    def count_visited(self):
-        return sum([p.visited for p in self.map])
+    def count_conflict(self):
+        return sum([p.conflict for p in self.map])
 
     def hit_top(self, x: int):
         return x < self.row_width
@@ -82,6 +90,57 @@ class World:
         if self.hit_right(self.position):
             return True
         return False
+
+    def detect_conflict(self):
+        pos = self.position
+        match self.direction:
+            case Direction.UP:
+                cpos = self.position - self.row_width
+                while True:
+                    if self.map[pos].visited_pos[Direction.RIGHT]:
+                        self.map[cpos].conflict = True
+                        break
+                    if self.map[pos].obstr():
+                        break
+                    if self.hit_right(pos):
+                        break
+                    pos += 1
+
+            case Direction.DOWN:
+                cpos = self.position + self.row_width
+                while True:
+                    if self.map[pos].visited_pos[Direction.LEFT]:
+                        self.map[cpos].conflict = True
+                        break
+                    if self.map[pos].obstr():
+                        break
+                    if self.hit_left(pos):
+                        break
+                    pos -= 1
+
+            case Direction.LEFT:
+                cpos = self.position - 1
+                while True:
+                    if self.map[pos].visited_pos[Direction.UP]:
+                        self.map[cpos].conflict = True
+                        break
+                    if self.map[pos].obstr():
+                        break
+                    if self.hit_top(pos):
+                        break
+                    pos -= self.row_width
+
+            case Direction.RIGHT:
+                cpos = self.position + 1
+                while True:
+                    if self.map[pos].visited_pos[Direction.DOWN]:
+                        self.map[cpos].conflict = True
+                        break
+                    if self.map[pos].obstr():
+                        break
+                    if self.hit_bottom(pos):
+                        break
+                    pos += self.row_width
 
     def move(self):
         match self.direction:
@@ -110,11 +169,14 @@ class World:
                 if not self.is_done() and self.map[self.position + 1].obstr():
                     self.direction = Direction.DOWN
 
-        self.map[self.position].visit()
+        self.map[self.position].visit(self.direction)
 
     def __str__(self) -> str:
         r = ""
         for i, p in enumerate(self.map):
+            if p.conflict >= 1:
+                r += "O"
+                continue
             if p.visited:
                 r += "X"
                 continue
@@ -153,6 +215,8 @@ def parse_input(codes: str) -> World:
 world = parse_input(codes)
 while not world.is_done():
     world.move()
+    world.detect_conflict()
+    # print(world)
+    # breakpoint()
 
-print(world)
-print(world.count_visited())
+print(world.count_conflict())
